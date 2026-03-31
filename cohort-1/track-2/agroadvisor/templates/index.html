@@ -548,7 +548,8 @@ input::placeholder,textarea::placeholder{color:var(--text-muted);opacity:0.6}
     (d.preventive_measures||[]).forEach(function(m){
       var span=el('span','leaf-badge');
       var icon=el('span','leaf-icon');span.appendChild(icon);
-      var txt=document.createTextNode(m);span.appendChild(txt);
+      var clean=m.replace(/\*\*(.*?)\*\*/g,'$1');
+      var txt=document.createTextNode(clean);span.appendChild(txt);
       var dew=el('span','dew');span.appendChild(dew);
       pl.appendChild(span);
     });

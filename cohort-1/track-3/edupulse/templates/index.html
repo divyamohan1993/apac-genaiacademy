@@ -630,7 +630,8 @@ body::after {
       var tr = document.createElement('tr');
       row.forEach(function(cell) {
         var td = document.createElement('td');
-        td.textContent = cell === null ? '-' : String(cell);
+        var v = cell === null ? '-' : (typeof cell === 'number' && !Number.isInteger(cell) ? parseFloat(cell.toFixed(2)) : cell);
+        td.textContent = String(v);
         tr.appendChild(td);
       });
       tableBody.appendChild(tr);

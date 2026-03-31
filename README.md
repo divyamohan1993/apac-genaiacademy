@@ -8,6 +8,14 @@
 [![Track 2](https://img.shields.io/badge/Track_2-AgroAdvisor-4ade80?style=for-the-badge&logo=google-cloud&logoColor=white)](#-track-2--agroadvisor)
 [![Track 3](https://img.shields.io/badge/Track_3-EduPulse-8b5cf6?style=for-the-badge&logo=google-cloud&logoColor=white)](#-track-3--edupulse)
 
+### Live Deployments
+
+| Service | URL |
+|---------|-----|
+| FirstResponse AI | https://firstresponse-ai-409924770511.asia-south1.run.app |
+| AgroAdvisor | https://agroadvisor-409924770511.asia-south1.run.app |
+| EduPulse | https://edupulse-409924770511.asia-south1.run.app |
+
 </div>
 
 ---
@@ -42,7 +50,7 @@ POST /triage
 
 ### Architecture
 ```
-User → Cloud Run → Flask → ADK Agent → Gemini 2.0 Flash → Structured Triage
+User → Cloud Run → Flask → ADK Agent → Gemini 2.5 Flash → Structured Triage
 ```
 
 ### Features
@@ -93,7 +101,7 @@ POST /advise
 ```
 User → Cloud Run → Flask → ADK Agent ↔ MCP Server → OpenWeatherMap API
                               ↓
-                        Gemini 2.0 Flash (Agronomist prompt)
+                        Gemini 2.5 Flash (Agronomist prompt)
 ```
 
 ### Features
@@ -249,7 +257,7 @@ gcloud run deploy firstresponse-ai --image gcr.io/PROJECT_ID/firstresponse-ai --
 
 | Layer | Technology |
 |-------|-----------|
-| AI Model | Gemini 2.0 Flash |
+| AI Model | Gemini 2.5 Flash |
 | Agent Framework | Google ADK (Agent Development Kit) |
 | Tool Protocol | Model Context Protocol (MCP) |
 | Database | AlloyDB for PostgreSQL |
@@ -267,5 +275,7 @@ gcloud run deploy firstresponse-ai --image gcr.io/PROJECT_ID/firstresponse-ai --
 Built for **Google Gen AI Academy APAC Edition** — Cohort 1
 
 *Three problems. Three solutions. Zero compromises.*
+
+All services deployed on **Google Cloud Run** (asia-south1) with **Gemini 2.5 Flash**.
 
 </div>
