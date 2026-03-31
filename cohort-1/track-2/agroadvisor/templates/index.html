@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgroAdvisor - Smart Farming Advisory</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --soil-deep:#1a0f00;--soil:#92400e;--soil-light:#b45309;
+  --forest:#0d2818;--leaf:#4ade80;--leaf-dark:#22c55e;--leaf-muted:#166534;
+  --gold:#f59e0b;--gold-light:#fbbf24;--gold-dark:#d97706;
+  --sky:#38bdf8;--sky-light:#7dd3fc;
+  --cream:#fef3c7;--cream-dark:#fde68a;
+  --text-primary:#fef9ef;--text-secondary:#d6d3d1;--text-muted:#a8a29e;
+  --card-bg:rgba(13,40,24,0.6);--card-border:rgba(74,222,128,0.15);
+  --input-bg:rgba(26,15,0,0.5);--input-border:rgba(245,158,11,0.3);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Source Sans 3',sans-serif;color:var(--text-primary);
+  min-height:100vh;overflow-x:hidden;
+  background:linear-gradient(165deg,var(--soil-deep) 0%,#1a1a0a 25%,var(--forest) 55%,#0a2015 100%);
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.03;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cpath d='M40 10 C25 10 10 25 10 40 C10 55 25 60 40 75 C55 60 70 55 70 40 C70 25 55 10 40 10Z' fill='%234ade80' opacity='0.5'/%3E%3Cpath d='M40 20 L40 65' stroke='%234ade80' stroke-width='0.5' opacity='0.3'/%3E%3C/svg%3E");
+  background-size:80px 80px;
+}
+.container{max-width:900px;margin:0 auto;padding:24px 20px;position:relative;z-index:1}
+.header{text-align:center;margin-bottom:40px;position:relative}
+.header-icon{
+  width:80px;height:80px;margin:0 auto 16px;
+  background:linear-gradient(135deg,var(--leaf-dark),var(--leaf-muted));
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 40px rgba(74,222,128,0.2),0 4px 20px rgba(0,0,0,0.3);
+}
+.header-icon svg{width:44px;height:44px}
+h1{
+  font-family:'Playfair Display',serif;font-size:2.6rem;font-weight:800;
+  background:linear-gradient(135deg,var(--cream),var(--gold-light),var(--leaf));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;letter-spacing:-0.5px;
+}
+.subtitle{font-size:1.05rem;color:var(--text-muted);margin-top:6px;font-weight:300;letter-spacing:0.5px}
+.time-indicator{
+  display:inline-flex;align-items:center;gap:8px;margin-top:12px;
+  padding:6px 16px;border-radius:20px;font-size:0.82rem;color:var(--text-muted);
+  background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.15);
+}
+.time-indicator .dot{width:7px;height:7px;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.field-report{
+  background:var(--card-bg);backdrop-filter:blur(20px);
+  border:1px solid var(--card-border);border-radius:16px;
+  padding:32px;margin-bottom:32px;position:relative;overflow:hidden;
+}
+.field-report::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--soil),var(--gold),var(--leaf),var(--sky));
+}
+.field-report-title{
+  font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:600;
+  color:var(--gold-light);margin-bottom:20px;display:flex;align-items:center;gap:10px;
+}
+.field-report-title svg{width:22px;height:22px;color:var(--gold)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group.full{grid-column:1/-1}
+label{font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--gold)}
+select,input,textarea{
+  background:var(--input-bg);border:1px solid var(--input-border);
+  border-radius:10px;padding:12px 14px;color:var(--text-primary);
+  font-family:'Source Sans 3',sans-serif;font-size:0.95rem;
+  transition:border-color 0.3s,box-shadow 0.3s;outline:none;
+  -webkit-appearance:none;appearance:none;
+}
+select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23f59e0b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;
+  padding-right:36px;cursor:pointer;
+}
+select option{background:#1a1a0a;color:var(--text-primary)}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(245,158,11,0.15)}
+textarea{resize:vertical;min-height:90px}
+input::placeholder,textarea::placeholder{color:var(--text-muted);opacity:0.6}
+.submit-btn{
+  grid-column:1/-1;margin-top:8px;
+  background:linear-gradient(135deg,var(--leaf-dark),var(--leaf-muted));
+  color:#fff;border:none;border-radius:12px;padding:14px 24px;
+  font-family:'Source Sans 3',sans-serif;font-size:1rem;font-weight:600;
+  cursor:pointer;transition:all 0.3s;letter-spacing:0.5px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.submit-btn:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(74,222,128,0.25);filter:brightness(1.1)}
+.submit-btn:active{transform:translateY(0)}
+.submit-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;filter:none}
+.submit-btn svg{width:20px;height:20px}
+.loading{display:none;text-align:center;padding:60px 20px}
+.loading.active{display:block}
+.plant-container{width:120px;height:160px;margin:0 auto 20px;position:relative}
+.plant-stem{
+  position:absolute;bottom:20px;left:50%;width:3px;
+  background:linear-gradient(to top,var(--leaf-dark),var(--leaf));
+  transform:translateX(-50%);border-radius:2px;
+  animation:grow-stem 2s ease-out infinite;transform-origin:bottom;
+}
+@keyframes grow-stem{0%{height:0}50%{height:80px}100%{height:80px}}
+.plant-leaf{
+  position:absolute;width:30px;height:20px;
+  background:var(--leaf-dark);border-radius:50% 0;
+  animation:grow-leaf 2s ease-out infinite;opacity:0;
+}
+.plant-leaf:nth-child(2){bottom:70px;left:50%;transform:rotate(-30deg);animation-delay:0.8s}
+.plant-leaf:nth-child(3){bottom:85px;right:50%;transform:rotate(30deg) scaleX(-1);animation-delay:1s}
+.plant-leaf:nth-child(4){bottom:95px;left:50%;transform:rotate(-20deg);animation-delay:1.2s}
+@keyframes grow-leaf{0%{opacity:0;transform:scale(0) rotate(-30deg)}40%{opacity:0}60%{opacity:1;transform:scale(1) rotate(-30deg)}100%{opacity:1;transform:scale(1) rotate(-30deg)}}
+.plant-pot{
+  position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:40px;height:22px;background:var(--soil);border-radius:0 0 8px 8px;
+}
+.plant-pot::before{
+  content:'';position:absolute;top:-4px;left:-4px;right:-4px;height:6px;
+  background:var(--soil-light);border-radius:3px;
+}
+.loading-text{
+  font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--text-muted);
+  animation:loading-dots 1.5s infinite;
+}
+@keyframes loading-dots{0%{opacity:0.4}50%{opacity:1}100%{opacity:0.4}}
+.results{display:none}
+.results.active{display:block}
+.advisory-card{
+  background:var(--card-bg);backdrop-filter:blur(20px);
+  border:1px solid var(--card-border);border-radius:16px;
+  overflow:hidden;margin-bottom:20px;
+}
+.advisory-header{
+  padding:24px 28px 20px;border-bottom:1px solid rgba(74,222,128,0.1);
+  display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;
+}
+.diagnosis-title{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--cream)}
+.confidence-meter{display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:140px}
+.confidence-label{font-size:0.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+.confidence-bar{width:140px;height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden}
+.confidence-fill{height:100%;border-radius:4px;transition:width 1.2s ease-out;background:linear-gradient(90deg,var(--gold-dark),var(--gold-light))}
+.confidence-fill.high{background:linear-gradient(90deg,var(--leaf-dark),var(--leaf))}
+.confidence-fill.low{background:linear-gradient(90deg,#ef4444,#f97316)}
+.confidence-value{font-size:0.85rem;font-weight:600;color:var(--gold-light)}
+.section{padding:24px 28px;border-bottom:1px solid rgba(74,222,128,0.06)}
+.section:last-child{border-bottom:none}
+.section-title{
+  font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;
+  margin-bottom:14px;display:flex;align-items:center;gap:10px;
+}
+.section-title.weather{color:var(--sky-light)}
+.section-title.treatment{color:var(--leaf)}
+.section-title.spraying{color:var(--gold-light)}
+.section-title.preventive{color:var(--cream)}
+.section-title svg{width:20px;height:20px;flex-shrink:0}
+.weather-correlation-text{
+  color:var(--text-secondary);line-height:1.7;font-size:0.95rem;
+  padding:14px 18px;background:rgba(56,189,248,0.06);
+  border-left:3px solid var(--sky);border-radius:0 8px 8px 0;
+}
+.weather-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:16px}
+.weather-stat{
+  background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.12);
+  border-radius:10px;padding:14px;text-align:center;
+}
+.weather-stat .icon{font-size:1.4rem;margin-bottom:4px}
+.weather-stat .val{font-size:1.2rem;font-weight:700;color:var(--sky-light)}
+.weather-stat .lbl{font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-top:2px}
+.treatment-steps{display:flex;flex-direction:column;gap:12px}
+.treatment-step{
+  display:flex;gap:14px;align-items:flex-start;padding:16px;
+  background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.1);
+  border-radius:12px;transition:border-color 0.3s;
+}
+.treatment-step:hover{border-color:rgba(74,222,128,0.25)}
+.step-num{
+  width:32px;height:32px;min-width:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--leaf-dark),var(--leaf-muted));
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:0.85rem;
+}
+.step-content{flex:1}
+.step-action{font-weight:600;color:var(--leaf);margin-bottom:3px}
+.step-details{color:var(--text-secondary);font-size:0.9rem;line-height:1.5}
+.spray-timeline{display:flex;flex-direction:column;gap:10px}
+.spray-slot{
+  display:flex;align-items:center;gap:14px;padding:12px 16px;
+  border-radius:10px;border:1px solid transparent;
+}
+.spray-slot.optimal{background:rgba(74,222,128,0.08);border-color:rgba(74,222,128,0.2)}
+.spray-slot.acceptable{background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2)}
+.spray-slot.poor{background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.2)}
+.spray-date{font-weight:700;min-width:90px;font-size:0.9rem}
+.spray-slot.optimal .spray-date{color:var(--leaf)}
+.spray-slot.acceptable .spray-date{color:var(--gold-light)}
+.spray-slot.poor .spray-date{color:#f87171}
+.spray-time{font-weight:600;color:var(--text-primary);min-width:110px;font-size:0.95rem}
+.spray-cond{color:var(--text-muted);font-size:0.85rem;flex:1}
+.spray-badge{
+  font-size:0.72rem;font-weight:600;text-transform:uppercase;
+  padding:3px 10px;border-radius:12px;letter-spacing:0.8px;
+}
+.spray-slot.optimal .spray-badge{background:rgba(74,222,128,0.15);color:var(--leaf)}
+.spray-slot.acceptable .spray-badge{background:rgba(245,158,11,0.15);color:var(--gold-light)}
+.spray-slot.poor .spray-badge{background:rgba(239,68,68,0.15);color:#f87171}
+.preventive-list{display:flex;flex-wrap:wrap;gap:10px}
+.leaf-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 18px;border-radius:24px;
+  background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);
+  font-size:0.88rem;color:var(--text-secondary);
+  transition:all 0.3s;position:relative;overflow:hidden;line-height:1.4;
+}
+.leaf-badge:hover{
+  background:rgba(74,222,128,0.12);border-color:rgba(74,222,128,0.3);
+  transform:translateY(-1px);
+}
+.leaf-badge .leaf-icon{
+  display:inline-block;width:8px;height:12px;min-width:8px;
+  background:var(--leaf-dark);
+  clip-path:polygon(50% 0%,100% 35%,80% 100%,20% 100%,0% 35%);
+}
+.leaf-badge .dew{
+  position:absolute;top:6px;right:10px;width:5px;height:5px;
+  background:rgba(56,189,248,0.5);border-radius:50%;opacity:0;transition:opacity 0.4s;
+}
+.leaf-badge:hover .dew{opacity:1}
+.error-card{
+  background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);
+  border-radius:12px;padding:20px 24px;color:#fca5a5;display:none;margin-bottom:20px;
+}
+.error-card.active{display:block}
+.error-card strong{color:#f87171}
+.forecast-text{
+  color:var(--text-secondary);font-size:0.92rem;line-height:1.6;
+  margin-top:12px;padding:10px 14px;background:rgba(56,189,248,0.04);border-radius:8px;
+}
+.fade-in{opacity:0;transform:translateY(16px);transition:opacity 0.5s,transform 0.5s}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+@media(max-width:640px){
+  .container{padding:16px 14px}
+  h1{font-size:2rem}
+  .form-grid{grid-template-columns:1fr}
+  .advisory-header{flex-direction:column}
+  .confidence-meter{align-items:flex-start}
+  .weather-grid{grid-template-columns:1fr 1fr}
+  .spray-slot{flex-wrap:wrap;gap:8px}
+  .spray-time{min-width:auto}
+  .section{padding:18px 20px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header class="header">
+  <div class="header-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22V8"/><path d="M5 12s2.5-5 7-5c4.5 0 7 5 7 5"/>
+      <path d="M7 8s1.5-4 5-4 5 4 5 4"/><circle cx="12" cy="5" r="1" fill="#fff"/>
+    </svg>
+  </div>
+  <h1>AgroAdvisor</h1>
+  <p class="subtitle">AI-Powered Agricultural Advisory &middot; Weather-Aware Crop Protection</p>
+  <div class="time-indicator">
+    <span class="dot" id="timeDot"></span>
+    <span id="timeLabel"></span>
+  </div>
+</header>
+
+<div class="field-report">
+  <div class="field-report-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+    </svg>
+    Field Report
+  </div>
+  <form id="advisoryForm" class="form-grid">
+    <div class="form-group">
+      <label for="crop">Crop Type</label>
+      <select id="crop" required>
+        <option value="">Select crop...</option>
+        <option value="Rice">Rice</option>
+        <option value="Wheat">Wheat</option>
+        <option value="Maize">Maize / Corn</option>
+        <option value="Cotton">Cotton</option>
+        <option value="Soybean">Soybean</option>
+        <option value="Sugarcane">Sugarcane</option>
+        <option value="Tomato">Tomato</option>
+        <option value="Potato">Potato</option>
+        <option value="Onion">Onion</option>
+        <option value="Chickpea">Chickpea / Gram</option>
+        <option value="Groundnut">Groundnut / Peanut</option>
+        <option value="Mustard">Mustard / Rapeseed</option>
+        <option value="Chili">Chili Pepper</option>
+        <option value="Banana">Banana</option>
+        <option value="Mango">Mango</option>
+        <option value="Tea">Tea</option>
+        <option value="Coffee">Coffee</option>
+        <option value="Rubber">Rubber</option>
+        <option value="Coconut">Coconut</option>
+        <option value="Palm Oil">Palm Oil</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="stage">Growth Stage</label>
+      <select id="stage" required>
+        <option value="">Select stage...</option>
+        <option value="Seedling">Seedling / Germination</option>
+        <option value="Vegetative">Vegetative Growth</option>
+        <option value="Flowering">Flowering / Reproductive</option>
+        <option value="Fruiting">Fruiting / Grain Fill</option>
+        <option value="Maturation">Maturation / Ripening</option>
+        <option value="Harvest">Harvest / Post-harvest</option>
+      </select>
+    </div>
+    <div class="form-group full">
+      <label for="location">Location</label>
+      <input type="text" id="location" placeholder="e.g. Pune, Maharashtra or Bangkok, Thailand" required>
+    </div>
+    <div class="form-group full">
+      <label for="symptoms">Observed Symptoms / Concerns</label>
+      <textarea id="symptoms" placeholder="Describe what you see: leaf spots, wilting, discoloration, pest damage, unusual growth patterns..." required></textarea>
+    </div>
+    <button type="submit" class="submit-btn" id="submitBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      Analyze &amp; Advise
+    </button>
+  </form>
+</div>
+
+<div class="loading" id="loadingSection">
+  <div class="plant-container">
+    <div class="plant-stem"></div>
+    <div class="plant-leaf"></div>
+    <div class="plant-leaf"></div>
+    <div class="plant-leaf"></div>
+    <div class="plant-pot"></div>
+  </div>
+  <div class="loading-text">Analyzing crop conditions and weather data...</div>
+</div>
+
+<div class="error-card" id="errorCard">
+  <strong>Analysis Error: </strong><span id="errorText"></span>
+</div>
+
+<div class="results" id="resultsSection">
+  <div class="advisory-card fade-in">
+    <div class="advisory-header">
+      <div>
+        <div style="font-size:0.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:4px">Diagnosis</div>
+        <div class="diagnosis-title" id="diagnosisTitle">--</div>
+      </div>
+      <div class="confidence-meter">
+        <div class="confidence-label">Confidence</div>
+        <div class="confidence-bar"><div class="confidence-fill" id="confidenceFill" style="width:0%"></div></div>
+        <div class="confidence-value" id="confidenceValue">--</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title weather">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v2m6.36.64l-1.41 1.41M20 12h2M17.95 17.95l1.41 1.41M12 20v2M4.05 17.95l-1.41 1.41M2 12h2M6.05 4.05L4.64 2.64"/><circle cx="12" cy="12" r="4"/></svg>
+        Weather Correlation
+      </div>
+      <div class="weather-correlation-text" id="weatherCorrelation">--</div>
+      <div class="weather-grid" id="weatherGrid"></div>
+      <div class="forecast-text" id="forecastOutlook"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title treatment">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M12 8v8m-4-4h8"/></svg>
+        Treatment Plan
+      </div>
+      <div class="treatment-steps" id="treatmentSteps"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title spraying">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Optimal Spraying Windows
+      </div>
+      <div class="spray-timeline" id="sprayTimeline"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title preventive">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Preventive Measures
+      </div>
+      <div class="preventive-list" id="preventiveList"></div>
+    </div>
+  </div>
+
+  <button class="submit-btn" id="newReportBtn" style="margin-top:8px" onclick="resetForm()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+    New Field Report
+  </button>
+</div>
+
+</div>
+
+<script>
+(function(){
+  function updateTime(){
+    var now=new Date();
+    var h=now.getHours();
+    var dot=document.getElementById('timeDot');
+    var label=document.getElementById('timeLabel');
+    var period,color;
+    if(h>=5&&h<12){period='Morning';color='#fbbf24'}
+    else if(h>=12&&h<17){period='Afternoon';color='#f59e0b'}
+    else if(h>=17&&h<20){period='Evening';color='#f97316'}
+    else{period='Night';color='#38bdf8'}
+    dot.style.background=color;
+    label.textContent=now.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+' \u2022 '+period+' \u2022 '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  }
+  updateTime();setInterval(updateTime,60000);
+
+  var form=document.getElementById('advisoryForm');
+  var loading=document.getElementById('loadingSection');
+  var results=document.getElementById('resultsSection');
+  var errorCard=document.getElementById('errorCard');
+
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var crop=document.getElementById('crop').value;
+    var stage=document.getElementById('stage').value;
+    var location=document.getElementById('location').value;
+    var symptoms=document.getElementById('symptoms').value;
+    if(!crop||!stage||!location||!symptoms)return;
+
+    document.getElementById('submitBtn').disabled=true;
+    loading.classList.add('active');
+    results.classList.remove('active');
+    errorCard.classList.remove('active');
+
+    fetch('/advise',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({crop:crop,stage:stage,location:location,symptoms:symptoms})
+    })
+    .then(function(r){
+      if(!r.ok)return r.json().then(function(d){throw new Error(d.error||'Request failed')});
+      return r.json();
+    })
+    .then(function(data){
+      loading.classList.remove('active');
+      if(data.error){showError(data.error);return}
+      renderResults(data);
+      results.classList.add('active');
+      setTimeout(function(){
+        var els=document.querySelectorAll('.fade-in');
+        for(var i=0;i<els.length;i++)els[i].classList.add('visible');
+      },50);
+      results.scrollIntoView({behavior:'smooth',block:'start'});
+    })
+    .catch(function(err){
+      loading.classList.remove('active');
+      showError(err.message);
+    })
+    .finally(function(){
+      document.getElementById('submitBtn').disabled=false;
+    });
+  });
+
+  function showError(msg){
+    document.getElementById('errorText').textContent=msg;
+    errorCard.classList.add('active');
+  }
+
+  function el(tag,cls){var e=document.createElement(tag);if(cls)e.className=cls;return e}
+
+  function renderResults(d){
+    document.getElementById('diagnosisTitle').textContent=d.diagnosis||'Unknown Condition';
+
+    var conf=Math.round((d.confidence||0)*100);
+    var fill=document.getElementById('confidenceFill');
+    fill.style.width='0%';
+    fill.className='confidence-fill'+(conf>=70?' high':conf>=40?'':' low');
+    setTimeout(function(){fill.style.width=conf+'%'},100);
+    document.getElementById('confidenceValue').textContent=conf+'%';
+
+    document.getElementById('weatherCorrelation').textContent=d.weather_correlation||'No weather data available.';
+
+    // Weather grid - safe DOM construction
+    var wg=document.getElementById('weatherGrid');
+    while(wg.firstChild)wg.removeChild(wg.firstChild);
+    var ws=d.weather_summary||{};
+    var stats=[
+      {emoji:'\ud83c\udf21\ufe0f',val:(ws.current_temp_c!=null?ws.current_temp_c+'\u00b0C':'--'),lbl:'Temperature'},
+      {emoji:'\ud83d\udca7',val:(ws.current_humidity_pct!=null?ws.current_humidity_pct+'%':'--'),lbl:'Humidity'},
+      {emoji:'\u2601\ufe0f',val:ws.current_condition||'--',lbl:'Condition'},
+      {emoji:'\ud83c\udf27\ufe0f',val:ws.rain_next_24h?'Expected':'None',lbl:'Rain 24h'}
+    ];
+    stats.forEach(function(s){
+      var card=el('div','weather-stat');
+      var ico=el('div','icon');ico.textContent=s.emoji;card.appendChild(ico);
+      var v=el('div','val');v.textContent=s.val;card.appendChild(v);
+      var lb=el('div','lbl');lb.textContent=s.lbl;card.appendChild(lb);
+      wg.appendChild(card);
+    });
+
+    var fo=document.getElementById('forecastOutlook');
+    fo.textContent=ws.forecast_outlook||'';
+    fo.style.display=ws.forecast_outlook?'block':'none';
+
+    // Treatment steps
+    var ts=document.getElementById('treatmentSteps');
+    while(ts.firstChild)ts.removeChild(ts.firstChild);
+    (d.treatment_plan||[]).forEach(function(step){
+      var row=el('div','treatment-step');
+      var num=el('div','step-num');num.textContent=step.step;row.appendChild(num);
+      var content=el('div','step-content');
+      var act=el('div','step-action');act.textContent=step.action;content.appendChild(act);
+      var det=el('div','step-details');det.textContent=step.details;content.appendChild(det);
+      row.appendChild(content);
+      ts.appendChild(row);
+    });
+
+    // Spraying timeline
+    var st=document.getElementById('sprayTimeline');
+    while(st.firstChild)st.removeChild(st.firstChild);
+    (d.spraying_window||[]).forEach(function(slot){
+      var suit=slot.suitability||'acceptable';
+      var row=el('div','spray-slot '+suit);
+      var dt=el('div','spray-date');dt.textContent=slot.date||'';row.appendChild(dt);
+      var tm=el('div','spray-time');tm.textContent=slot.time_range||'';row.appendChild(tm);
+      var cond=el('div','spray-cond');cond.textContent=slot.conditions||'';row.appendChild(cond);
+      var badge=el('div','spray-badge');badge.textContent=suit;row.appendChild(badge);
+      st.appendChild(row);
+    });
+
+    // Preventive measures
+    var pl=document.getElementById('preventiveList');
+    while(pl.firstChild)pl.removeChild(pl.firstChild);
+    (d.preventive_measures||[]).forEach(function(m){
+      var span=el('span','leaf-badge');
+      var icon=el('span','leaf-icon');span.appendChild(icon);
+      var txt=document.createTextNode(m);span.appendChild(txt);
+      var dew=el('span','dew');span.appendChild(dew);
+      pl.appendChild(span);
+    });
+  }
+
+  window.resetForm=function(){
+    results.classList.remove('active');
+    errorCard.classList.remove('active');
+    var els=document.querySelectorAll('.fade-in');
+    for(var i=0;i<els.length;i++)els[i].classList.remove('visible');
+    form.reset();
+    window.scrollTo({top:0,behavior:'smooth'});
+  };
+})();
+</script>
+</body>
+</html>

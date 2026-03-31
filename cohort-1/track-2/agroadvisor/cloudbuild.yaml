@@ -1,0 +1,33 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/agroadvisor', '.']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/agroadvisor']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'agroadvisor'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/agroadvisor'
+      - '--region'
+      - 'asia-south1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'OPENWEATHER_API_KEY=${_OPENWEATHER_API_KEY},GOOGLE_API_KEY=${_GOOGLE_API_KEY}'
+      - '--memory'
+      - '512Mi'
+      - '--timeout'
+      - '120'
+
+substitutions:
+  _OPENWEATHER_API_KEY: ''
+  _GOOGLE_API_KEY: ''
+
+options:
+  logging: CLOUD_LOGGING_ONLY

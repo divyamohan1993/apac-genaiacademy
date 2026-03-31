@@ -1,0 +1,6 @@
+google-adk
+google-genai
+flask
+flask-cors
+gunicorn
+pytest

@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduPulse - Student Performance Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0b1120;
+  --bg-card: #111827;
+  --bg-card-alt: #1a2332;
+  --border: #1e293b;
+  --text: #e2e8f0;
+  --text-dim: #94a3b8;
+  --text-muted: #64748b;
+  --purple: #8b5cf6;
+  --purple-glow: rgba(139, 92, 246, 0.3);
+  --blue: #3b82f6;
+  --blue-glow: rgba(59, 130, 246, 0.2);
+  --green: #10b981;
+  --orange: #f97316;
+  --red: #ef4444;
+}
+
+body {
+  font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Constellation dot-grid background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 15%, rgba(139,92,246,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 35%, rgba(59,130,246,0.25) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 10%, rgba(139,92,246,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 45%, rgba(59,130,246,0.15) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 20%, rgba(16,185,129,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 85% 55%, rgba(139,92,246,0.25) 0%, transparent 100%),
+    radial-gradient(1px 1px at 15% 65%, rgba(59,130,246,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 35% 80%, rgba(139,92,246,0.15) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 70%, rgba(59,130,246,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 85%, rgba(16,185,129,0.15) 0%, transparent 100%),
+    radial-gradient(1px 1px at 95% 30%, rgba(139,92,246,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 50% 90%, rgba(59,130,246,0.15) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Animated constellation lines */
+@keyframes constellationFade {
+  0%, 100% { opacity: 0.04; }
+  50% { opacity: 0.12; }
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    linear-gradient(135deg, transparent 40%, rgba(139,92,246,0.03) 50%, transparent 60%),
+    linear-gradient(225deg, transparent 40%, rgba(59,130,246,0.03) 50%, transparent 60%);
+  animation: constellationFade 8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+
+/* Header */
+.header {
+  padding: 2rem 2rem 0;
+  text-align: center;
+}
+
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.8rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--purple), var(--blue), var(--green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -1px;
+}
+
+.tagline {
+  font-size: 1rem;
+  color: var(--text-dim);
+  margin-top: 0.4rem;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+}
+
+/* Main content */
+.main {
+  flex: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  width: 100%;
+}
+
+/* Search portal */
+.search-section { margin-bottom: 2rem; }
+
+.search-wrapper {
+  position: relative;
+  margin-bottom: 1.2rem;
+}
+
+@keyframes portalGlow {
+  0%, 100% { box-shadow: 0 0 20px var(--purple-glow), 0 0 40px rgba(139,92,246,0.1), inset 0 0 20px rgba(139,92,246,0.05); }
+  50% { box-shadow: 0 0 30px var(--purple-glow), 0 0 60px rgba(59,130,246,0.15), inset 0 0 30px rgba(59,130,246,0.05); }
+}
+
+.search-input {
+  width: 100%;
+  padding: 1.2rem 3.5rem 1.2rem 1.5rem;
+  font-size: 1.1rem;
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  color: var(--text);
+  outline: none;
+  transition: all 0.3s ease;
+  animation: portalGlow 4s ease-in-out infinite;
+}
+
+.search-input:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 40px var(--purple-glow), 0 0 80px rgba(139,92,246,0.15);
+}
+
+.search-input::placeholder { color: var(--text-muted); }
+
+.search-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, var(--purple), var(--blue));
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.search-btn:hover { transform: translateY(-50%) scale(1.05); filter: brightness(1.1); }
+.search-btn:active { transform: translateY(-50%) scale(0.98); }
+
+.search-btn svg { width: 20px; height: 20px; }
+
+/* Suggestion pills */
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.pill {
+  padding: 0.45rem 1rem;
+  font-size: 0.8rem;
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.pill:hover {
+  border-color: var(--purple);
+  color: var(--purple);
+  background: rgba(139, 92, 246, 0.08);
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Loading spinner - orbital rings */
+.loader-container {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem;
+}
+
+.loader-container.active { display: flex; }
+
+.orbital {
+  position: relative;
+  width: 60px;
+  height: 60px;
+}
+
+@keyframes orbit1 { 0% { transform: rotateZ(0deg); } 100% { transform: rotateZ(360deg); } }
+@keyframes orbit2 { 0% { transform: rotateZ(120deg); } 100% { transform: rotateZ(480deg); } }
+@keyframes orbit3 { 0% { transform: rotateZ(240deg); } 100% { transform: rotateZ(600deg); } }
+
+.orbital .ring {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid transparent;
+}
+
+.orbital .ring:nth-child(1) {
+  border-top-color: var(--purple);
+  animation: orbit1 1.2s linear infinite;
+}
+.orbital .ring:nth-child(2) {
+  border-right-color: var(--blue);
+  animation: orbit2 1.5s linear infinite;
+  width: 80%; height: 80%; top: 10%; left: 10%;
+}
+.orbital .ring:nth-child(3) {
+  border-bottom-color: var(--green);
+  animation: orbit3 1.8s linear infinite;
+  width: 60%; height: 60%; top: 20%; left: 20%;
+}
+
+.loader-text {
+  margin-left: 1.2rem;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+}
+
+/* Error */
+.error-box {
+  display: none;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  color: var(--red);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.error-box.active { display: block; }
+
+/* Results dashboard */
+.results-panel {
+  display: none;
+}
+
+.results-panel.active { display: block; }
+
+/* Summary card */
+.summary-card {
+  background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.06));
+  border: 1px solid rgba(139,92,246,0.2);
+  border-radius: 14px;
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 1.2rem;
+}
+
+.summary-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--purple);
+  margin-bottom: 0.5rem;
+}
+
+.summary-text {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+/* Meta row */
+.meta-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.meta-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.8rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.meta-chip .val { color: var(--text); font-weight: 500; }
+
+/* SQL block */
+.sql-card {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 1.2rem;
+  overflow: hidden;
+}
+
+.sql-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  background: rgba(30, 41, 59, 0.5);
+  border-bottom: 1px solid var(--border);
+}
+
+.sql-header-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+.copy-btn {
+  font-size: 0.72rem;
+  padding: 0.25rem 0.6rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: 'IBM Plex Sans', sans-serif;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover { border-color: var(--purple); color: var(--purple); }
+
+.sql-code {
+  padding: 1rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: #c9d1d9;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-x: auto;
+}
+
+/* Data table */
+.table-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.data-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-card-alt);
+  padding: 0.7rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.data-table td {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.data-table tr:nth-child(even) td { background: rgba(17, 24, 39, 0.5); }
+
+.data-table tr:hover td { background: rgba(139, 92, 246, 0.05); }
+
+.no-results {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* Footer stats bar */
+.footer {
+  padding: 1.2rem;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  background: rgba(11, 17, 32, 0.8);
+}
+
+.footer-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.stat {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.stat strong {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .logo { font-size: 2rem; }
+  .search-input { font-size: 1rem; padding: 1rem 3.2rem 1rem 1.2rem; }
+  .meta-row { gap: 0.5rem; }
+  .suggestions { gap: 0.4rem; }
+  .pill { font-size: 0.72rem; padding: 0.35rem 0.8rem; }
+  .footer-stats { gap: 1rem; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="logo">EduPulse</div>
+    <p class="tagline">AI-Powered Student Performance Analytics</p>
+  </header>
+
+  <main class="main">
+    <section class="search-section">
+      <div class="search-wrapper">
+        <input class="search-input" id="queryInput" type="text"
+               placeholder="Ask anything about student performance..."
+               autocomplete="off">
+        <button class="search-btn" id="queryBtn" aria-label="Search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </div>
+      <div class="suggestions" id="suggestions">
+        <button class="pill">Which students are at risk of failing?</button>
+        <button class="pill">Top 10 students by GPA this semester</button>
+        <button class="pill">Average attendance by department</button>
+        <button class="pill">Students who improved most since last semester</button>
+        <button class="pill">Subjects with highest failure rate</button>
+      </div>
+    </section>
+
+    <div class="loader-container" id="loader">
+      <div class="orbital">
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+      </div>
+      <span class="loader-text">Analyzing student data...</span>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <div class="results-panel" id="results">
+      <div class="summary-card">
+        <div class="summary-label">AI Insight</div>
+        <div class="summary-text" id="summaryText"></div>
+      </div>
+
+      <div class="meta-row" id="metaRow">
+        <div class="meta-chip">Rows: <span class="val" id="rowCount">0</span></div>
+        <div class="meta-chip">Time: <span class="val" id="execTime">0s</span></div>
+      </div>
+
+      <div class="sql-card">
+        <div class="sql-header">
+          <span class="sql-header-label">Generated SQL</span>
+          <button class="copy-btn" id="copyBtn">Copy</button>
+        </div>
+        <pre class="sql-code" id="sqlCode"></pre>
+      </div>
+
+      <div class="table-card">
+        <div class="table-wrapper">
+          <table class="data-table" id="dataTable">
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-stats">
+      <span class="stat"><strong>200</strong> Students</span>
+      <span class="stat"><strong>15</strong> Subjects</span>
+      <span class="stat"><strong>1,500+</strong> Records</span>
+      <span class="stat"><strong>4</strong> Semesters</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+(function() {
+  var input = document.getElementById('queryInput');
+  var btn = document.getElementById('queryBtn');
+  var loader = document.getElementById('loader');
+  var errorBox = document.getElementById('errorBox');
+  var resultsPanel = document.getElementById('results');
+  var summaryText = document.getElementById('summaryText');
+  var rowCount = document.getElementById('rowCount');
+  var execTime = document.getElementById('execTime');
+  var sqlCode = document.getElementById('sqlCode');
+  var copyBtn = document.getElementById('copyBtn');
+  var tableHead = document.getElementById('tableHead');
+  var tableBody = document.getElementById('tableBody');
+  var pills = document.querySelectorAll('.pill');
+  var rawSql = '';
+
+  /* SQL syntax highlighting - input is server-generated (not user content), and we
+     escape all HTML entities before applying highlight spans, so this is safe. */
+  function highlightSQL(sql) {
+    var keywords = /\b(SELECT|FROM|WHERE|JOIN|LEFT|RIGHT|INNER|OUTER|ON|AND|OR|NOT|IN|IS|NULL|AS|ORDER|BY|GROUP|HAVING|LIMIT|OFFSET|DISTINCT|COUNT|AVG|SUM|MIN|MAX|CASE|WHEN|THEN|ELSE|END|BETWEEN|LIKE|ILIKE|DESC|ASC|UNION|ALL|EXISTS|COALESCE|CAST|WITH|OVER|PARTITION|ROUND|NULLIF)\b/gi;
+    /* Escape HTML entities first to prevent injection */
+    var escaped = sql.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    /* Apply syntax coloring to the escaped text */
+    escaped = escaped.replace(/(&apos;[^&]*(?:&amp;[^&]*)*&apos;|'[^']*')/g, function(m) { return '<span class="str">' + m + '</span>'; });
+    escaped = escaped.replace(keywords, function(m) { return '<span class="kw">' + m.toUpperCase() + '</span>'; });
+    escaped = escaped.replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>');
+    return escaped;
+  }
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.classList.add('active');
+    resultsPanel.classList.remove('active');
+    loader.classList.remove('active');
+  }
+
+  function hideError() {
+    errorBox.classList.remove('active');
+  }
+
+  function renderResults(data) {
+    hideError();
+    loader.classList.remove('active');
+    resultsPanel.classList.add('active');
+
+    summaryText.textContent = data.summary || 'No summary available.';
+    rowCount.textContent = data.row_count;
+    execTime.textContent = data.execution_time + 's';
+
+    rawSql = data.sql || '';
+    /* sqlCode is a <pre> showing server-generated SQL with syntax highlighting.
+       The highlightSQL function escapes all HTML entities before inserting spans. */
+    sqlCode.textContent = '';
+    var highlightedFragment = document.createRange().createContextualFragment(highlightSQL(rawSql));
+    sqlCode.appendChild(highlightedFragment);
+
+    /* Clear table using DOM methods */
+    while (tableHead.firstChild) tableHead.removeChild(tableHead.firstChild);
+    while (tableBody.firstChild) tableBody.removeChild(tableBody.firstChild);
+
+    if (!data.columns || data.columns.length === 0) {
+      var emptyRow = document.createElement('tr');
+      var emptyCell = document.createElement('td');
+      emptyCell.className = 'no-results';
+      emptyCell.setAttribute('colspan', '99');
+      emptyCell.textContent = 'No results returned.';
+      emptyRow.appendChild(emptyCell);
+      tableBody.appendChild(emptyRow);
+      return;
+    }
+
+    var headRow = document.createElement('tr');
+    data.columns.forEach(function(col) {
+      var th = document.createElement('th');
+      th.textContent = col;
+      headRow.appendChild(th);
+    });
+    tableHead.appendChild(headRow);
+
+    var rows = data.results || [];
+    if (rows.length === 0) {
+      var zeroRow = document.createElement('tr');
+      var zeroCell = document.createElement('td');
+      zeroCell.className = 'no-results';
+      zeroCell.setAttribute('colspan', String(data.columns.length));
+      zeroCell.textContent = 'Query returned 0 rows.';
+      zeroRow.appendChild(zeroCell);
+      tableBody.appendChild(zeroRow);
+      return;
+    }
+
+    rows.forEach(function(row) {
+      var tr = document.createElement('tr');
+      row.forEach(function(cell) {
+        var td = document.createElement('td');
+        td.textContent = cell === null ? '-' : String(cell);
+        tr.appendChild(td);
+      });
+      tableBody.appendChild(tr);
+    });
+  }
+
+  function runQuery(question) {
+    if (!question.trim()) return;
+    hideError();
+    resultsPanel.classList.remove('active');
+    loader.classList.add('active');
+
+    fetch('/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: question })
+    })
+    .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+    .then(function(r) {
+      if (!r.ok) {
+        showError(r.data.error || 'Unknown error');
+      } else {
+        renderResults(r.data);
+      }
+    })
+    .catch(function(err) {
+      showError('Network error: ' + err.message);
+    });
+  }
+
+  btn.addEventListener('click', function() { runQuery(input.value); });
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { runQuery(input.value); }
+  });
+
+  pills.forEach(function(pill) {
+    pill.addEventListener('click', function() {
+      input.value = pill.textContent;
+      runQuery(pill.textContent);
+    });
+  });
+
+  copyBtn.addEventListener('click', function() {
+    navigator.clipboard.writeText(rawSql).then(function() {
+      copyBtn.textContent = 'Copied!';
+      setTimeout(function() { copyBtn.textContent = 'Copy'; }, 1500);
+    });
+  });
+
+  input.focus();
+})();
+</script>
+</body>
+</html>

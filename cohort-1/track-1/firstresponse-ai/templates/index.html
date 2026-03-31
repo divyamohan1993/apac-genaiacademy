@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIRSTRESPONSE AI | Emergency Triage</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--surface:#0d0d15;--border:#1a1a2e;--red:#ff2d2d;--amber:#ffaa00;--green:#00ff88;--black-triage:#1a1a2e;--text:#c8c8d4;--text-dim:#5a5a72;--glow-red:0 0 30px rgba(255,45,45,.3);--glow-amber:0 0 30px rgba(255,170,0,.3);--glow-green:0 0 30px rgba(0,255,136,.3)}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;min-height:100vh;overflow-x:hidden;position:relative}
+
+/* Grid background */
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(26,26,46,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(26,26,46,.3) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* Scanline overlay */
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);pointer-events:none;z-index:9999}
+
+/* Radar sweep */
+.radar{position:fixed;top:50%;left:50%;width:800px;height:800px;transform:translate(-50%,-50%);pointer-events:none;z-index:0;opacity:.04}
+.radar::before{content:'';position:absolute;inset:0;border-radius:50%;border:1px solid var(--green)}
+.radar::after{content:'';position:absolute;top:50%;left:50%;width:50%;height:2px;background:linear-gradient(90deg,var(--green),transparent);transform-origin:left center;animation:radarSweep 6s linear infinite}
+@keyframes radarSweep{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+.container{max-width:900px;margin:0 auto;padding:24px 20px;position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
+
+/* Header */
+.header{text-align:center;margin-bottom:40px;position:relative}
+.header-badge{display:inline-block;padding:4px 16px;border:1px solid var(--red);color:var(--red);font-size:10px;letter-spacing:4px;text-transform:uppercase;margin-bottom:16px;position:relative}
+.header-badge::before,.header-badge::after{content:'';position:absolute;width:6px;height:6px;border:1px solid var(--red)}
+.header-badge::before{top:-3px;left:-3px;border-right:none;border-bottom:none}
+.header-badge::after{bottom:-3px;right:-3px;border-left:none;border-top:none}
+
+.title{font-family:'Archivo Black',sans-serif;font-size:clamp(28px,6vw,52px);color:#fff;letter-spacing:3px;position:relative;display:inline-block;animation:glitch 8s infinite}
+.title span{color:var(--red)}
+@keyframes glitch{0%,92%,94%,96%,100%{transform:none;text-shadow:none}93%{transform:translate(-2px,1px);text-shadow:2px 0 var(--red),-2px 0 var(--green)}95%{transform:translate(2px,-1px);text-shadow:-2px 0 var(--amber),2px 0 var(--red)}}
+
+/* Heartbeat line */
+.heartbeat-line{height:40px;margin:12px auto 0;max-width:400px;overflow:hidden;position:relative}
+.heartbeat-line svg{width:100%;height:100%}
+.heartbeat-line path{stroke:var(--red);stroke-width:2;fill:none;stroke-dasharray:600;stroke-dashoffset:600;animation:drawHeartbeat 3s linear infinite}
+@keyframes drawHeartbeat{to{stroke-dashoffset:0}}
+
+.subtitle{color:var(--text-dim);font-size:12px;letter-spacing:2px;margin-top:8px}
+
+/* Status bar */
+.status-bar{display:flex;gap:16px;justify-content:center;margin-bottom:32px;flex-wrap:wrap}
+.status-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim)}
+.status-dot{width:6px;height:6px;border-radius:50%;animation:pulse 2s ease-in-out infinite}
+.status-dot.live{background:var(--green);box-shadow:0 0 8px var(--green)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Input area */
+.input-section{margin-bottom:32px}
+.input-label{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--amber);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.input-label::before{content:'>';color:var(--red)}
+.sitrep-box{position:relative;border:1px solid var(--border);background:var(--surface);transition:border-color .3s}
+.sitrep-box:focus-within{border-color:var(--amber);box-shadow:0 0 20px rgba(255,170,0,.08)}
+.sitrep-box::before{content:'SITREP';position:absolute;top:-9px;left:16px;background:var(--surface);padding:0 8px;font-size:9px;color:var(--amber);letter-spacing:3px}
+.sitrep-box textarea{width:100%;min-height:120px;background:transparent;border:none;color:#fff;font-family:'JetBrains Mono',monospace;font-size:14px;padding:20px 16px 16px;resize:vertical;outline:none;line-height:1.6}
+.sitrep-box textarea::placeholder{color:var(--text-dim)}
+.sitrep-box::after{content:'';position:absolute;bottom:-1px;right:-1px;width:20px;height:20px;border-right:2px solid var(--amber);border-bottom:2px solid var(--amber)}
+
+.char-count{text-align:right;font-size:10px;color:var(--text-dim);margin-top:4px}
+
+/* Submit button */
+.submit-row{display:flex;gap:12px;margin-top:12px}
+.btn-triage{flex:1;padding:14px 24px;background:linear-gradient(135deg,rgba(255,45,45,.15),rgba(255,45,45,.05));border:1px solid var(--red);color:var(--red);font-family:'Archivo Black',sans-serif;font-size:14px;letter-spacing:3px;cursor:pointer;transition:all .2s;text-transform:uppercase;position:relative;overflow:hidden}
+.btn-triage:hover{background:linear-gradient(135deg,rgba(255,45,45,.25),rgba(255,45,45,.1));box-shadow:var(--glow-red)}
+.btn-triage:active{transform:scale(.98)}
+.btn-triage:disabled{opacity:.4;cursor:not-allowed}
+.btn-triage::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,45,45,.1),transparent);transition:left .5s}
+.btn-triage:hover::before{left:100%}
+.btn-clear{padding:14px 20px;background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:12px;cursor:pointer;transition:all .2s;letter-spacing:1px}
+.btn-clear:hover{border-color:var(--text-dim);color:var(--text)}
+
+/* Processing animation */
+.processing{display:none;text-align:center;padding:40px 0}
+.processing.active{display:block}
+.wave-container{display:flex;justify-content:center;gap:4px;height:40px;align-items:center;margin-bottom:16px}
+.wave-bar{width:4px;background:var(--red);border-radius:2px;animation:wave 1.2s ease-in-out infinite}
+.wave-bar:nth-child(1){animation-delay:0s;height:10px}
+.wave-bar:nth-child(2){animation-delay:.1s;height:20px}
+.wave-bar:nth-child(3){animation-delay:.2s;height:30px}
+.wave-bar:nth-child(4){animation-delay:.3s;height:40px}
+.wave-bar:nth-child(5){animation-delay:.4s;height:30px}
+.wave-bar:nth-child(6){animation-delay:.5s;height:20px}
+.wave-bar:nth-child(7){animation-delay:.3s;height:35px}
+.wave-bar:nth-child(8){animation-delay:.2s;height:25px}
+.wave-bar:nth-child(9){animation-delay:.1s;height:15px}
+@keyframes wave{0%,100%{transform:scaleY(.3);opacity:.3}50%{transform:scaleY(1);opacity:1}}
+.processing-text{font-size:12px;color:var(--text-dim);letter-spacing:2px}
+
+/* Result card */
+.result{display:none;animation:slideUp .6s ease-out}
+.result.active{display:block}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+.triage-card{border:2px solid var(--border);background:var(--surface);position:relative;overflow:hidden}
+.triage-card.red{border-color:var(--red);box-shadow:var(--glow-red)}
+.triage-card.yellow{border-color:var(--amber);box-shadow:var(--glow-amber)}
+.triage-card.green{border-color:var(--green);box-shadow:var(--glow-green)}
+.triage-card.black{border-color:#444;box-shadow:0 0 30px rgba(100,100,100,.2)}
+.triage-card.red .card-pulse{background:var(--red)}
+.triage-card.yellow .card-pulse{background:var(--amber)}
+.triage-card.green .card-pulse{background:var(--green)}
+.triage-card.black .card-pulse{background:#555}
+
+.card-pulse{position:absolute;top:0;left:0;right:0;height:3px;animation:cardPulse 2s ease-in-out infinite}
+@keyframes cardPulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.card-header{display:flex;align-items:stretch;border-bottom:1px solid var(--border)}
+.severity-badge{padding:24px 32px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:140px;gap:6px}
+.severity-badge.red{background:rgba(255,45,45,.1)}
+.severity-badge.yellow{background:rgba(255,170,0,.1)}
+.severity-badge.green{background:rgba(0,255,136,.1)}
+.severity-badge.black{background:rgba(80,80,80,.1)}
+.severity-color{font-family:'Archivo Black',sans-serif;font-size:32px;letter-spacing:2px;animation:badgePulse 2s ease-in-out infinite}
+.severity-color.red{color:var(--red)}
+.severity-color.yellow{color:var(--amber)}
+.severity-color.green{color:var(--green)}
+.severity-color.black{color:#888}
+@keyframes badgePulse{0%,100%{opacity:1}50%{opacity:.7}}
+.severity-cat{font-size:10px;letter-spacing:3px;color:var(--text-dim)}
+
+.card-meta{flex:1;padding:20px 24px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.meta-row{display:flex;align-items:center;gap:8px;font-size:12px}
+.meta-label{color:var(--text-dim);min-width:100px}
+.meta-value{color:#fff}
+.confidence-bar{height:4px;background:var(--border);border-radius:2px;flex:1;max-width:120px;overflow:hidden}
+.confidence-fill{height:100%;border-radius:2px;transition:width .8s ease-out}
+
+.card-body{padding:24px}
+
+.section{margin-bottom:20px}
+.section:last-child{margin-bottom:0}
+.section-title{font-size:10px;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.section-title::before{content:'//';color:var(--red)}
+
+.symptom-tags{display:flex;flex-wrap:wrap;gap:8px}
+.symptom-tag{padding:4px 12px;border:1px solid var(--border);font-size:11px;color:var(--text);background:rgba(255,255,255,.02);animation:tagIn .4s ease-out backwards}
+@keyframes tagIn{from{opacity:0;transform:scale(.8)}}
+
+.action-list{list-style:none;counter-reset:actions}
+.action-list li{counter-increment:actions;padding:8px 0 8px 32px;font-size:13px;color:var(--text);border-bottom:1px solid rgba(26,26,46,.5);position:relative;animation:actionIn .4s ease-out backwards}
+.action-list li::before{content:counter(actions,decimal-leading-zero);position:absolute;left:0;color:var(--red);font-size:11px;font-weight:700}
+.action-list li:last-child{border-bottom:none}
+@keyframes actionIn{from{opacity:0;transform:translateX(-10px)}}
+
+.transport-indicator{display:flex;align-items:center;gap:12px}
+.transport-level{padding:6px 16px;font-size:12px;letter-spacing:2px;font-weight:700}
+.transport-level.urgent{background:rgba(255,45,45,.15);color:var(--red);border:1px solid var(--red)}
+.transport-level.soon{background:rgba(255,170,0,.15);color:var(--amber);border:1px solid var(--amber)}
+.transport-level.routine{background:rgba(0,255,136,.15);color:var(--green);border:1px solid var(--green)}
+.transport-level.none{background:rgba(100,100,100,.15);color:#888;border:1px solid #555}
+
+.resources-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.resource-item{text-align:center;padding:12px;border:1px solid var(--border);background:rgba(255,255,255,.01)}
+.resource-count{font-family:'Archivo Black',sans-serif;font-size:24px;color:#fff}
+.resource-label{font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-top:4px}
+
+.rationale{font-size:12px;color:var(--text-dim);line-height:1.7;padding:12px 16px;border-left:2px solid var(--border);font-style:italic}
+
+/* Error display */
+.error-msg{display:none;padding:16px;border:1px solid var(--red);background:rgba(255,45,45,.05);color:var(--red);font-size:13px;margin-bottom:20px}
+.error-msg.active{display:block}
+
+/* Footer */
+.footer{margin-top:auto;padding-top:40px;text-align:center;border-top:1px solid var(--border)}
+.footer-stats{display:flex;justify-content:center;gap:32px;flex-wrap:wrap;margin-bottom:12px}
+.footer-stat{font-size:11px;color:var(--text-dim)}
+.footer-stat strong{color:var(--green)}
+.footer-credit{font-size:10px;color:var(--text-dim);letter-spacing:1px;opacity:.5;margin-top:8px}
+
+/* Presets */
+.presets{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.preset-btn{padding:6px 12px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:10px;cursor:pointer;transition:all .2s;letter-spacing:1px}
+.preset-btn:hover{border-color:var(--text-dim);color:var(--text)}
+
+@media(max-width:600px){
+.card-header{flex-direction:column}
+.severity-badge{min-width:unset;padding:16px}
+.resources-grid{grid-template-columns:1fr}
+.footer-stats{flex-direction:column;gap:8px}
+.status-bar{gap:8px}
+}
+</style>
+</head>
+<body>
+<div class="radar"></div>
+<div class="container">
+  <header class="header">
+    <div class="header-badge">Emergency Medical Triage System</div>
+    <h1 class="title">FIRST<span>RESPONSE</span> AI</h1>
+    <div class="heartbeat-line">
+      <svg viewBox="0 0 400 40" preserveAspectRatio="none">
+        <path d="M0,20 L80,20 L90,20 L100,5 L110,35 L120,10 L130,30 L140,20 L200,20 L210,20 L220,5 L230,35 L240,10 L250,30 L260,20 L320,20 L330,20 L340,5 L350,35 L360,10 L370,30 L380,20 L400,20"/>
+      </svg>
+    </div>
+    <p class="subtitle">START PROTOCOL TRIAGE CLASSIFICATION ENGINE</p>
+  </header>
+
+  <div class="status-bar">
+    <div class="status-item"><span class="status-dot live"></span> SYSTEM ONLINE</div>
+    <div class="status-item"><span class="status-dot live"></span> GEMINI 2.0 FLASH</div>
+    <div class="status-item"><span class="status-dot live"></span> START PROTOCOL LOADED</div>
+  </div>
+
+  <div class="input-section">
+    <label class="input-label">Situation Report</label>
+    <div class="sitrep-box">
+      <textarea id="situation" placeholder="Describe the emergency situation in detail...&#10;&#10;Example: 45-year-old male found unconscious after vehicle collision. Heavy bleeding from left leg, weak pulse, rapid shallow breathing. Two other passengers with minor cuts." spellcheck="false"></textarea>
+    </div>
+    <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    <div class="presets" id="presets"></div>
+    <div class="submit-row">
+      <button class="btn-triage" id="btnTriage">INITIATE TRIAGE</button>
+      <button class="btn-clear" id="btnClear">CLEAR</button>
+    </div>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <div class="processing" id="processing">
+    <div class="wave-container">
+      <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+    </div>
+    <div class="processing-text">ANALYZING SITUATION REPORT...</div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="triage-card" id="triageCard">
+      <div class="card-pulse"></div>
+      <div class="card-header">
+        <div class="severity-badge" id="severityBadge">
+          <div class="severity-color" id="severityColor"></div>
+          <div class="severity-cat" id="severityCat"></div>
+        </div>
+        <div class="card-meta">
+          <div class="meta-row">
+            <span class="meta-label">CONFIDENCE</span>
+            <div class="confidence-bar"><div class="confidence-fill" id="confidenceFill"></div></div>
+            <span class="meta-value" id="confidenceVal"></span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">AFFECTED</span>
+            <span class="meta-value" id="affectedCount"></span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">MECHANISM</span>
+            <span class="meta-value" id="mechanism"></span>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="section">
+          <div class="section-title">Identified Symptoms</div>
+          <div class="symptom-tags" id="symptoms"></div>
+        </div>
+        <div class="section">
+          <div class="section-title">Immediate Actions</div>
+          <ol class="action-list" id="actions"></ol>
+        </div>
+        <div class="section">
+          <div class="section-title">Transport Priority</div>
+          <div class="transport-indicator" id="transport"></div>
+        </div>
+        <div class="section">
+          <div class="section-title">Estimated Resources</div>
+          <div class="resources-grid" id="resources"></div>
+        </div>
+        <div class="section">
+          <div class="section-title">Clinical Rationale</div>
+          <div class="rationale" id="rationale"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-stats">
+      <div class="footer-stat">Avg Response: <strong>&lt;2s</strong></div>
+      <div class="footer-stat">Protocol: <strong>START Triage</strong></div>
+      <div class="footer-stat">Lives Impacted: <strong>150K+</strong></div>
+    </div>
+    <div class="footer-credit">FIRSTRESPONSE AI // GEN AI ACADEMY APAC // TRACK 1</div>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var SEVERITY_MAP={RED:'red',YELLOW:'yellow',GREEN:'green',BLACK:'black'};
+  var TRANSPORT_MAP={URGENT:'urgent',SOON:'soon',ROUTINE:'routine',NONE:'none'};
+
+  var PRESETS=[
+    {label:'MCI: Vehicle',text:'Car accident on highway. Driver trapped, unresponsive, heavy bleeding from head wound. Passenger conscious but complaining of severe chest pain and difficulty breathing.'},
+    {label:'Pediatric Fall',text:'Child fell from playground equipment approximately 3 meters. Crying, holding right arm which appears deformed. Small scrape on forehead. Alert and responsive.'},
+    {label:'Electrocution',text:'Construction worker electrocuted by power line. Not breathing, no pulse detected. Severe burns on both hands and entry/exit wounds visible. Co-worker has minor burns on forearm from trying to help.'},
+    {label:'Slip & Fall',text:'Elderly woman slipped on wet floor at grocery store. Walking with assistance but complaining of hip pain. Small bruise forming on left hip. Alert and oriented.'}
+  ];
+
+  function $(id){return document.getElementById(id)}
+
+  var textarea=$('situation');
+  var presetsEl=$('presets');
+
+  // Build preset buttons safely via DOM
+  PRESETS.forEach(function(p){
+    var btn=document.createElement('button');
+    btn.className='preset-btn';
+    btn.textContent=p.label;
+    btn.addEventListener('click',function(){
+      textarea.value=p.text;
+      textarea.dispatchEvent(new Event('input'));
+      textarea.focus();
+    });
+    presetsEl.appendChild(btn);
+  });
+
+  textarea.addEventListener('input',function(){
+    $('charCount').textContent=textarea.value.length;
+  });
+
+  $('btnClear').addEventListener('click',function(){
+    textarea.value='';
+    $('charCount').textContent='0';
+    $('result').classList.remove('active');
+    $('errorMsg').classList.remove('active');
+    textarea.focus();
+  });
+
+  $('btnTriage').addEventListener('click',submitTriage);
+
+  textarea.addEventListener('keydown',function(e){
+    if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();submitTriage()}
+  });
+
+  function submitTriage(){
+    var situation=textarea.value.trim();
+    if(!situation){textarea.focus();return}
+
+    var btn=$('btnTriage');
+    btn.disabled=true;
+    $('errorMsg').classList.remove('active');
+    $('result').classList.remove('active');
+    $('processing').classList.add('active');
+
+    fetch('/triage',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({situation:situation})
+    }).then(function(res){
+      return res.json().then(function(data){
+        if(!res.ok)throw new Error(data.error||'Triage request failed');
+        return data;
+      });
+    }).then(function(data){
+      renderResult(data);
+    }).catch(function(e){
+      $('errorMsg').textContent='ERROR: '+e.message;
+      $('errorMsg').classList.add('active');
+    }).finally(function(){
+      $('processing').classList.remove('active');
+      btn.disabled=false;
+    });
+  }
+
+  function renderResult(d){
+    var sev=(d.severity||'RED').toUpperCase();
+    var cls=SEVERITY_MAP[sev]||'red';
+    var card=$('triageCard');
+
+    card.className='triage-card '+cls;
+    var badge=$('severityBadge');
+    badge.className='severity-badge '+cls;
+    var colorEl=$('severityColor');
+    colorEl.className='severity-color '+cls;
+    colorEl.textContent=sev;
+    $('severityCat').textContent=d.category||'';
+
+    // Confidence
+    var conf=Math.round((d.confidence||0)*100);
+    $('confidenceVal').textContent=conf+'%';
+    var fill=$('confidenceFill');
+    fill.style.width='0%';
+    var colorMap={green:'var(--green)',yellow:'var(--amber)',black:'#555'};
+    fill.style.background=colorMap[cls]||'var(--red)';
+    requestAnimationFrame(function(){fill.style.width=conf+'%'});
+
+    $('affectedCount').textContent=d.affected_count||1;
+    $('mechanism').textContent=d.mechanism_of_injury||'Unknown';
+
+    // Symptoms - safe DOM construction
+    var sympEl=$('symptoms');
+    while(sympEl.firstChild)sympEl.removeChild(sympEl.firstChild);
+    (d.symptoms_identified||[]).forEach(function(s,i){
+      var tag=document.createElement('span');
+      tag.className='symptom-tag';
+      tag.textContent=s;
+      tag.style.animationDelay=(i*80)+'ms';
+      sympEl.appendChild(tag);
+    });
+
+    // Actions - safe DOM construction
+    var actEl=$('actions');
+    while(actEl.firstChild)actEl.removeChild(actEl.firstChild);
+    (d.immediate_actions||[]).forEach(function(a,i){
+      var li=document.createElement('li');
+      li.textContent=a;
+      li.style.animationDelay=(i*100+200)+'ms';
+      actEl.appendChild(li);
+    });
+
+    // Transport - safe DOM construction
+    var tp=(d.transport_priority||'ROUTINE').toUpperCase();
+    var tpCls=TRANSPORT_MAP[tp]||'routine';
+    var transportEl=$('transport');
+    while(transportEl.firstChild)transportEl.removeChild(transportEl.firstChild);
+    var tpSpan=document.createElement('span');
+    tpSpan.className='transport-level '+tpCls;
+    tpSpan.textContent=tp;
+    transportEl.appendChild(tpSpan);
+
+    // Resources - safe DOM construction
+    var res=d.estimated_resources||{};
+    var resourcesEl=$('resources');
+    while(resourcesEl.firstChild)resourcesEl.removeChild(resourcesEl.firstChild);
+    [{k:'ems_units',l:'EMS UNITS'},{k:'trauma_centers',l:'TRAUMA CENTERS'},{k:'helicopters',l:'HELICOPTERS'}].forEach(function(r){
+      var item=document.createElement('div');
+      item.className='resource-item';
+      var count=document.createElement('div');
+      count.className='resource-count';
+      count.textContent=res[r.k]||0;
+      var label=document.createElement('div');
+      label.className='resource-label';
+      label.textContent=r.l;
+      item.appendChild(count);
+      item.appendChild(label);
+      resourcesEl.appendChild(item);
+    });
+
+    $('rationale').textContent=d.rationale||'';
+    $('result').classList.add('active');
+    $('result').scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+})();
+</script>
+</body>
+</html>
