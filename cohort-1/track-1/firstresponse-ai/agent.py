@@ -1,6 +1,4 @@
-"""FirstResponse AI - Emergency Medical Triage Agent using Google ADK."""
-
-from google.adk.agents import Agent
+"""FirstResponse AI - Emergency Medical Triage Agent using Gemini."""
 
 TRIAGE_SYSTEM_PROMPT = """You are FirstResponse AI, an emergency medical triage agent trained in the START (Simple Triage and Rapid Treatment) protocol. You receive natural language descriptions of emergency/medical situations and return structured triage assessments.
 
@@ -51,9 +49,4 @@ Rules:
 - Never refuse to triage. Every situation gets a classification.
 """
 
-triage_agent = Agent(
-    name="firstresponse_triage",
-    model="gemini-2.0-flash",
-    instruction=TRIAGE_SYSTEM_PROMPT,
-    description="Emergency medical triage agent using START protocol",
-)
+MODEL = "gemini-2.5-flash"

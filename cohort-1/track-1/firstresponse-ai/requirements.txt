@@ -1,6 +1,5 @@
-google-adk
-google-genai
-flask
-flask-cors
-gunicorn
-pytest
+google-genai>=1.0
+flask>=3.0
+flask-cors>=4.0
+gunicorn>=22.0
+pytest>=8.0

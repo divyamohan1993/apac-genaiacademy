@@ -45,7 +45,7 @@ def triage():
 
     try:
         response = _get_client().models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=f"Triage this emergency situation:\n\n{situation}",
             config=genai.types.GenerateContentConfig(
                 system_instruction=TRIAGE_SYSTEM_PROMPT,

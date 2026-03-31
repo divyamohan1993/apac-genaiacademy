@@ -50,7 +50,15 @@ def get_db_pool():
     if _db_pool is None:
         db_url = os.environ.get("DATABASE_URL", "")
         if not db_url:
-            return None
+            # Try Cloud SQL socket connection
+            instance = os.environ.get("CLOUD_SQL_INSTANCE", "")
+            db_name = os.environ.get("DB_NAME", "edupulse")
+            db_user = os.environ.get("DB_USER", "edupulse")
+            db_pass = os.environ.get("DB_PASS", "")
+            if instance and db_pass:
+                db_url = f"host=/cloudsql/{instance} dbname={db_name} user={db_user} password={db_pass}"
+            else:
+                return None
         _db_pool = pool.ThreadedConnectionPool(1, 10, db_url)
     return _db_pool
 
@@ -94,7 +102,7 @@ def nl_to_sql(question):
     api_key = os.environ.get("GOOGLE_API_KEY", "")
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash",
         contents=f"{SCHEMA_CONTEXT}\n\nConvert this question to a PostgreSQL SELECT query:\n{question}",
     )
     raw_sql = response.text.strip()
@@ -122,7 +130,7 @@ def summarize_results(question, sql, results, columns):
         f"Keep it to 2-4 sentences."
     )
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash",
         contents=prompt,
     )
     return response.text.strip()
